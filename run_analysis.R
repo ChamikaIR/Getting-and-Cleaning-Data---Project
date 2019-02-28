@@ -1,0 +1,88 @@
+library(plyr)
+
+# 0. Downloading dataset
+if(!file.exists("./Final Project")){dir.create("./Final Project")}
+url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+download.file(url, "./data/Dataset.zip", 'curl')
+
+# Unzip dataSet to /data directory
+unzip(zipfile="./Getting cleaning/Dataset.zip",exdir="./Getting cleaning")
+
+
+# Merging the training and the test sets to create one data set:
+
+  # Reading files
+
+    # Reading trainings tables: x_train,y_train,subject_train
+      x_train <- read.table("./Final Project/UCI HAR Dataset/train/X_train.txt")
+      y_train <- read.table("./Final Project/UCI HAR Dataset/train/y_train.txt")
+      subject_train <- read.table("./Final Project/UCI HAR Dataset/train/subject_train.txt")
+      
+    # Reading testing tables: x_test, y_test, subject_test
+      x_test <- read.table("./Final Project/UCI HAR Dataset/test/X_test.txt")
+      y_test <- read.table("./Final Project/UCI HAR Dataset/test/y_test.txt")
+      subject_test <- read.table("./Final Project/UCI HAR Dataset/test/subject_test.txt")
+      
+    # Reading feature vector:
+      features <- read.table('./Final Project/UCI HAR Dataset/features.txt')
+      
+    # Reading activity labels:
+      activity_labels = read.table('./Final Project/UCI HAR Dataset/activity_labels.txt')
+      
+  # Assigning column names:
+      colnames(x_train) <- features[,2] 
+      colnames(y_train) <-"activityId"
+      colnames(subject_train) <- "subjectId"
+      
+      colnames(x_test) <- features[,2] 
+      colnames(y_test) <- "activityId"
+      colnames(subject_test) <- "subjectId"
+      
+      colnames(activity_labels) <- c('activityId','activityType')
+      
+  # Merging all data in one set:
+      mrg_train <- cbind(y_train, subject_train, x_train)
+      mrg_test <- cbind(y_test, subject_test, x_test)
+      setAllInOne <- rbind(mrg_train, mrg_test)
+      
+# Extracting only the measurements on the mean and standard deviation for each measurement
+  
+  # Reading column names:
+      colNames <- colnames(setAllInOne)
+      
+  # Create vector for defining ID, mean and standard deviation:
+      mean_and_std <- (grepl("activityId" , colNames) | 
+                       grepl("subjectId" , colNames) | 
+                       grepl("mean.." , colNames) | 
+                       grepl("std.." , colNames) 
+                      )
+      
+  # Making nessesary subset from setAllInOne:
+      setForMeanAndStd <- setAllInOne[ , mean_and_std == TRUE]
+      
+# Using descriptive activity names to name the activities in the data set:
+      setWithActivityNames <- merge(setForMeanAndStd, activity_labels,
+                                   by='activityId',
+                                   all.x=TRUE)
+      
+# Appropriately labeling the data set with descriptive variable names.
+      # This step was made in previos steps =) See 1.3, 2.2, 2.3.
+      
+# Creating a second, independent tidy data set with the average of each variable for each activity and each subject:
+      
+      # Making second tidy data set 
+      secTidySet <- aggregate(. ~subjectId + activityId, setWithActivityNames, mean)
+      secTidySet <- secTidySet[order(secTidySet$subjectId, secTidySet$activityId),]
+      
+      # Writing second tidy data set in txt file
+      write.table(secTidySet, "secTidySet.txt", row.name=FALSE)
+        
+      
+      
+      
+      
+      
+      
+      
+      
+      
